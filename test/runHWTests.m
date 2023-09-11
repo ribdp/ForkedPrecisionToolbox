@@ -15,15 +15,18 @@ import matlab.unittest.selectors.HasProcedureName;
 switch board
     case "zynq-zed-ad7380"
         at = 'AD7380';
-    case "zynq-zed-ad7768"
+    case {"zynq-zed-ad7768", ...
+            "zynq-zed-adv7511-ad7768-axi-adc-precision"}
         at = 'AD7768';
-    case "zynq-zed-adv7511-ad7768-1-evb"
+    case {"zynq-zed-adv7511-ad7768-1-evb", ...
+            "zynq-zed-adv7511-ad7768-1-evb-precision"}
         at = 'AD7768_1';
     case "zynq-zed-ad4030"
         at = 'AD4030';
     case "zynq-zed-ad4630-16"
         at = 'AD4630_16';
-    case "zynq-zed-ad4630-24"
+    case {"zynq-zed-ad4630-24", ...
+        "zynq-zed-adv7511-ad4630-24-precision"}
         at = 'AD4630_24';
     
     otherwise
@@ -53,10 +56,14 @@ try
     disp(t);
     disp(repmat('#',1,80));
     fid = fopen('failures.txt','a+');
+    exitcode = 0;
     for test = results
         if test.Failed
             disp(test.Name);
             fprintf(fid,string(test.Name)+'\n');
+            exitcode = 2;
+        elseif test.Incomplete
+            exitcode = 3;
         end
     end
     fclose(fid);
@@ -67,5 +74,5 @@ catch e
 end
 save(['BSPTest_',datestr(now,'dd_mm_yyyy-HH_MM_SS'),'.mat'],'t');
 bdclose('all');
-exit(any([results.Failed]));
+exit(exitcode);
 end

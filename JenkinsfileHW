@@ -1,9 +1,9 @@
 // Pipeline
-lock(label: 'adgt_test_harness_boards') {
+lock('nuc04') {
     @Library('sdgtt-lib@adgt-test-harness') _ // Not necessary when we turn on global libraries :)
     def hdlBranch = "NA"
     def linuxBranch = "NA"
-    def bootPartitionBranch = "release"
+    def bootPartitionBranch = "2021_r2"
     def firmwareVersion = 'v0.34'
     def bootfile_source = 'artifactory' // options: sftp, artifactory, http, local
     def harness = getGauntlet(hdlBranch, linuxBranch, bootPartitionBranch, firmwareVersion, bootfile_source)
@@ -12,11 +12,14 @@ lock(label: 'adgt_test_harness_boards') {
     harness.set_env('nebula_repo', 'https://github.com/sdgtt/nebula.git')
     harness.set_env('nebula_branch','dev')
     harness.set_env('nebula_config_branch','release')
-    harness.set_env('libiio_branch', 'v0.23')
-    harness.set_env('telemetry_repo', 'https://github.com/sdgtt/telemetry.git')
-    harness.set_env('telemetry_branch', 'master')
-    harness.set_env('matlab_repo', 'https://github.com/analogdevicesinc/TransceiverToolbox.git') // Not necessary when using checkout scm
-    harness.set_env('matlab_release','R2021b')
+    harness.set_env('libiio_branch', 'v0.25')
+    // harness.set_env('telemetry_repo', 'https://github.com/sdgtt/telemetry.git')
+    // harness.set_env('telemetry_branch', 'master')
+    harness.set_env('matlab_repo', 'https://github.com/analogdevicesinc/PrecisionToolbox.git') // Not necessary when using checkout scm
+    harness.set_env('matlab_branch', 'main') // Not necessary when using checkout scm
+    harness.set_env('matlab_release','R2022b')
+    harness.set_env('matlab_license','network')
+    harness.set_matlab_timeout('15m')
   
     //Update nebula config from netbox
     harness.set_update_nebula_config(true)
@@ -24,21 +27,23 @@ lock(label: 'adgt_test_harness_boards') {
     harness.set_env('netbox_ip','primary.englab')
     harness.set_env('netbox_port','8000')
     harness.set_env('netbox_base_url','netbox')
-    harness.set_env('netbox_token','0123456789abcdef0123456789abcdef01234567')
-    harness.set_env('netbox_devices_tag','active')
+    withCredentials([string(credentialsId: 'netbox_token', variable: 'TOKEN')]) {
+        harness.set_env('netbox_token', TOKEN)
+    }
+    harness.set_env('netbox_devices_tag','precision')
     
     //Update agent with required deps
-    harness.set_required_agent(["sdg-nuc-01","sdg-nuc-02"])
+    harness.set_required_agent(["sdg-nuc-04"])
     harness.update_agents()
   
     //Set other test parameters
     harness.set_nebula_debug(true)
     harness.set_enable_docker(true)
-    harness.set_docker_host_mode(false)
+    harness.set_docker_host_mode(true) // Set to false if using machine-specific license
     harness.set_send_telemetry(false)
     harness.set_log_jira(false)
     harness.set_enable_resource_queuing(true)
-    harness.set_lock_agent(true) // Required for MATLAB toolbox tests
+    harness.set_lock_agent(false) // Set to true if using machine-specific license
     harness.set_elastic_server('192.168.10.1')
     //harness.set_required_hardware(["zynq-zed-ad7380",                                  
     //                              "zynq-zed-ad7768",
@@ -46,7 +51,9 @@ lock(label: 'adgt_test_harness_boards') {
     //                              "zynq-zed-ad4030",
     //                              "zynq-zed-ad4630-16",
     //                             "zynq-zed-ad4630-24"])
-    harness.set_required_hardware(["zynq-zed-adv7511-ad7768-1-evb"])
+    harness.set_required_hardware(["zynq-zed-adv7511-ad7768-1-evb-precision",
+                                    "zynq-zed-adv7511-ad4630-24-precision",
+                                    "zynq-zed-adv7511-ad7768-axi-adc-precision"])
     harness.set_docker_args(['Vivado', 'MATLAB'])
     harness.set_nebula_local_fs_source_root("artifactory.analog.com")
   
